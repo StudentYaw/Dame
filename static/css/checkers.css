@@ -1,0 +1,46 @@
+.white {
+    background-color: #FFFFFF;
+}
+
+.black {
+    background-color: #000000;
+}
+
+.grey {
+    background-color: #CCCCCC;
+}
+
+.brown {
+    background-color: burlywood;
+}
+
+.cell {
+    width: 50px;
+    height: 50px;
+    border: 1px solid #000000;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+/* piece class that creates a filled circle checker piece */
+.piece {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    border: 3px solid #AFAFAF;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.highlighted {
+    background-color: blue;
+    opacity: 0.5;
+}
+
+.deactivated {
+    opacity: 0.5;
+}

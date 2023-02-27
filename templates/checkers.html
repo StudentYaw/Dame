@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Checkers</title>
+    <!-- Stylesheet checkers.css -->
+    <link rel="stylesheet" href="../static/css/checkers.css">
+    <!-- Front-End code from checkers.js -->
+    <script src="../static/js/data.js"></script>
+    <script src="../static/js/checkers.js"></script>
+  </head>
+  <body>
+    <div id="board">
+
+    </div>
+    <p>Session: </p><p id="session"></p>
+    <p>You: </p><p id="player"></p> <p>Pieces left: </p><p id="player_pieces"></p>
+    <p>Opponent: </p><p id="opponent"></p> <p>Pieces left: </p><p id="opponent_pieces"></p>
+    <br>
+    <p>Turn: </p><p id="turn"></p>
+    <!-- <table>
+      {% for row in board %}
+        <tr>
+          {% for cell in row %}
+            <td>{{ cell }}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </table> -->
+    <!-- <form action="/move" method="post">
+      <input type="text" name="start_row">
+      <input type="text" name="start_col">
+      <input type="text" name="end_row">
+      <input type="text" name="end_col">
+      <input type="submit" value="Move">
+    </form> -->
+  </body>
+</html>

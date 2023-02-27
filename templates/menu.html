@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Checkers</title>
+    <!-- Stylesheet checkers.css -->
+    <link rel="stylesheet" href="../static/css/checkers.css">
+    <!-- Front-End code from checkers.js -->
+    <script src="../static/js/data.js"></script>
+    <script src="../static/js/menu.js"></script>
+  </head>
+  <body>
+    <!-- Start locally button -->
+    <button id="start_local" onclick="startLocally()">Start Locally</button>
+    <!-- Start session button -->
+    <button id="start_session" class="deactivated" onclick="startSession()">Start Session</button>
+    <!-- Join session button -->
+    <button id="join_session" class="deactivated" onclick="joinSession()">Join Session</button>
+    <!-- Session ID input -->
+    <input type="text" id="session_id" placeholder="Session ID">
+    <!-- Session ID submit button -->
+    <button id="submit_session_id" onclick="submitSessionId()">Submit</button>
+    <!-- Input for name -->
+    <input type="text" id="name" placeholder="Name">
+    <!-- name submit button -->
+    <button id="submit_name" onclick="submitName()">Submit</button>
+    <br>
+    <br>
+    <p>Session: </p><p id="session"></p>
+    <p>Player: </p><p id="player"></p>
+    <p>Opponent: </p><p id="opponent"></p>
+  </body>
+</html>
