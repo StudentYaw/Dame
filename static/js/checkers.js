@@ -33,7 +33,6 @@ class Cell {
         this.id = "cell-" + row + "-" + col;
     }
 
-
     // Methods
     getId() {
         return this.id;
@@ -72,9 +71,18 @@ class Cell {
         return this.color;
     }
 
+    setNewPiece(fromCell) {
+        let piece = fromCell.getPiece()
+        // Change the piece id
+        piece.id = "piece-" + this.row + "-" + this.col;
+        // Set the piece    
+        this.piece = piece;
+    }
+
     setPiece(piece) {
         this.piece = piece;
     }
+
 
     removePiece() {
         this.piece = null;
@@ -82,10 +90,12 @@ class Cell {
 
     highlight() {
         this.isHighlighted = true;
+        document.getElementById(this.id).classList.add("highlighted");
     }
 
     unhighlight() {
         this.isHighlighted = false;
+        document.getElementById(this.id).classList.remove("highlighted");
     }
 
     isOccupied() {
@@ -97,15 +107,11 @@ class Cell {
     }
 
     isBlack() {
-        return (this.row + this.col) % 2 == 0;
+        return (this.row + this.col) % 2 != 0;
     }
 
     isWhite() {
         return !this.isBlack();
-    }
-
-    getId() {
-        return this.id;
     }
 }
 
@@ -121,7 +127,7 @@ class Board {
         for (var row = 0; row < this.rows; row++) {
             this.board[row] = [];
             for (var col = 0; col < this.cols; col++) {
-                this.board[row][col] = new Cell(row, col, (row + col) % 2 == 0 ? "black" : "white");
+                this.board[row][col] = new Cell(row, col, (row + col) % 2 == 0 ? "white" : "black");
                 //this.board[row][col].setPiece(new Piece((row + col) % 2 == 0 ? "grey" : "white"))
                 // Set white pieces in first three rows
                 // Set black pieces in last three rows
@@ -135,7 +141,14 @@ class Board {
     }
 
     getCell(row, col) {
-        return this.board[row][col];
+        let value;
+        try {
+            value = this.board[row][col];
+        } catch (e) {
+            alert(e);
+            value = "error"
+        }
+        return value;
     }
 
     getHTML() {
@@ -144,7 +157,8 @@ class Board {
             html += "<tr>";
             for (var col = 0; col < this.cols; col++) {
                 var cell = this.board[row][col];
-                html += this.getCellHTML(row, col);
+                let content = this.getCellHTML(row, col);
+                html += content;
                 html += "</td>";
             }
             html += "</tr>";
@@ -155,9 +169,13 @@ class Board {
 
     getCellHTML(row, col) {
         var cell = this.board[row][col];
-        var html = "<td class='cell " + cell.getColor() + "' id=" + cell.getId() + ">";
+        var html = "<td class='cell " + cell.getColor() + "' id='" + cell.getId() + "'>";
         if (cell.isOccupied()) {
-            html += cell.getPiece().getHTML();
+            try {
+                html += cell.getPiece().getHTML();
+            } catch (e) {
+                html += "";
+            }
         }
         html += "</td>";
         return html;
@@ -177,19 +195,56 @@ class Checkers {
         document.getElementById("board").innerHTML = this.board.getHTML();
     }
 
-    movePiece(fromCell, toCell) {
-        // Move the piece
-        toCell.setPiece(fromCell.getPiece());
-        fromCell.removePiece();
+    isValidMove(fromCell, toCell) {
+        // Check if the move is diagonal
+        if (Math.abs(fromCell.row - toCell.row) != Math.abs(fromCell.col - toCell.col)) {
+            return false;
+        }
 
+        // Check if the move is forward
+        if (fromCell.getColor() == "brown" && fromCell.row > toCell.row) {
+            return false;
+        } else if (fromCell.getColor() == "white" && fromCell.row < toCell.row) {
+            return false;
+        }
+
+        // Check if the move is one cell
+        if (Math.abs(fromCell.row - toCell.row) == 1 && Math.abs(fromCell.col - toCell.col) == 1) {
+            return true;
+        }
+
+        // Check if the move is two cells
+        if (Math.abs(fromCell.row - toCell.row) == 2 && Math.abs(fromCell.col - toCell.col) == 2) {
+            // Check if there is a piece to jump
+            let row = (fromCell.row + toCell.row) / 2;
+            let col = (fromCell.col + toCell.col) / 2;
+            if (this.board.getCell(row, col).isOccupied()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    movePiece(fromCell, toCell) {
         // Unhighlight the cells
         fromCell.unhighlight();
         toCell.unhighlight();
+
+        // Move the piece
+        toCell.setNewPiece(fromCell);
+        fromCell.removePiece();
+
+        this.displayBoard();
+        this.setEventListeners();
     }
 
-    inputMove(e, row, col, checkers) {
+    inputMove(e, checkers) {
+        let row = e.currentTarget.id.split("-")[1];
+        let col = e.currentTarget.id.split("-")[2];
+
         // Check if the cell is highlighted
-        if (this.board.getCell(row, col).isHighlighted) {
+        if (checkers.board.getCell(row, col).isHighlighted) {
             alert("Already selected");
             return;
         }
@@ -197,76 +252,101 @@ class Checkers {
         // Behaviour depending on the selection mode
         if (selectionMode == "from") {
             // Check if the cell is occupied
-            if (!this.board.getCell(row, col).isOccupied()) {
+            if (!checkers.board.getCell(row, col).isOccupied()) {
                 alert("No piece in this cell");
                 return;
             }
 
             // Check if the piece is of the current player
-            if (this.board.getCell(row, col).getPiece().getColor() != playerTurn) {
+            if (checkers.board.getCell(row, col).getPiece().getColor() != playerTurn) {
                 alert("Not your piece");
                 return;
             }
 
             // Highlight the cell
-            this.board.getCell(row, col).highlight();
-            this.board.getCell(row, col).element.classList.add("highlighted");
+            checkers.board.getCell(row, col).highlight();
 
             // Save the cell
-            this.fromCell = this.board.getCell(row, col);
+            checkers.fromCell = checkers.board.getCell(row, col);
 
             // Change selection mode
-            this.changeSelectionMode();
+            checkers.changeSelectionMode();
         }
         else if (selectionMode == "to") {
             // Check if the cell is occupied
-            if (this.board.getCell(row, col).isOccupied()) {
+            if (checkers.board.getCell(row, col).isOccupied()) {
                 alert("Cannot move to an occupied cell");
                 return;
             }
 
             // Check if the move is valid
-            if (!this.isValidMove(this.fromCell, this.board.getCell(row, col))) {
+            if (!checkers.isValidMove(checkers.fromCell, checkers.board.getCell(row, col))) {
                 alert("Invalid move");
                 return;
             }
 
             // Move the piece
-            this.board.getCell(row, col).setPiece(this.fromCell.getPiece());
-            this.fromCell.removePiece();
+            checkers.board.getCell(row, col).setPiece(checkers.fromCell.getPiece());
 
             // Unhighlight the cell
-            this.fromCell.unhighlight();
-            this.fromCell.element.classList.remove("highlighted");
+            checkers.fromCell.unhighlight();
 
             // Save the cell
-            this.toCell = this.board.getCell(row, col);
+            checkers.toCell = checkers.board.getCell(row, col);
 
             // Move the piece to the new cell
-            this.movePiece(this.fromCell, this.toCell);
+            checkers.movePiece(checkers.fromCell, checkers.toCell);
 
             // Change turn
-            this.changeTurn();
+            checkers.changeTurn();
 
             // Change selection mode
-            this.changeSelectionMode();
+            checkers.changeSelectionMode();
         }
     }
 
+    /* 
+    
+    class Example {
+        constructor(selector) {
+            this.elements = document.querySelectorAll(selector);
+            this.addEventListeners();
+        }
+
+        addEventListeners() {
+            this.elements.forEach((element) => {
+                element.addEventListener("click", (event) => {
+                    this.handleClick(event, this, "otherVariable");
+                });
+            });
+        }
+
+        handleClick(event, example, otherVariable) {
+            // Do something with the event, example, and otherVariable
+            console.log(event);
+            console.log(example);
+            console.log(otherVariable);
+        }
+    }
+    */
+
     setEventListeners() {
-        for (var row = 0; row < this.board.rows; row++) {
-            for (var col = 0; col < this.board.cols; col++) {
+        for (var row = 0; row < this.board.rows - 1; row++) {
+            for (var col = 0; col < this.board.cols - 1; col++) {
                 // Set click event listener for each cell by id, function parameters are the event itself and the checkers object. Function is inputMove
-                document.getElementById(this.board.getCell(row, col).getId()).onclick = this.inputMove(e, row, col, this);
+                let checkers = this;
+                document.getElementById(this.board.getCell(row, col).getId()).addEventListener('click', (event) => {
+                    this.inputMove(event, this);
+                });
             }
         }
     }
 
     changeTurn() {
-        if (playerTurn == "player1") {
-            playerTurn = "player2";
+        if (playerTurn == "white") {
+            playerTurn = "brown";
         } else {
-            playerTurn = "player1";
+            playerTurn = "white";
         }
     }
 
