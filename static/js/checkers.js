@@ -195,6 +195,30 @@ class Checkers {
         document.getElementById("board").innerHTML = this.board.getHTML();
     }
 
+    isJumpAvailable(fromCell) {
+        // Check if any jump is available
+        let piece = fromCell.getPiece();
+        let row = fromCell.row;
+        let col = fromCell.col;
+        let color = piece.getColor();
+        let jumpAvailable = false;
+        if (color == "brown") {
+            if (this.board.getCell(row - 1, col - 1).isOccupied() && this.board.getCell(row - 2, col - 2).isOccupied() == false) {
+                jumpAvailable = true;
+            } else if (this.board.getCell(row - 1, col + 1).isOccupied() && this.board.getCell(row - 2, col + 2).isOccupied() == false) {
+                jumpAvailable = true;
+            }
+        } else if (color == "white") {
+            if (this.board.getCell(row + 1, col - 1).isOccupied() && this.board.getCell(row + 2, col - 2).isOccupied() == false) {
+                jumpAvailable = true;
+            } else if (this.board.getCell(row + 1, col + 1).isOccupied() && this.board.getCell(row + 2, col + 2).isOccupied() == false) {
+                jumpAvailable = true;
+            }
+        }
+
+        return jumpAvailable;
+    }
+
     isValidMove(fromCell, toCell) {
         // Check if the move is diagonal
         if (Math.abs(fromCell.row - toCell.row) != Math.abs(fromCell.col - toCell.col)) {
@@ -202,9 +226,9 @@ class Checkers {
         }
 
         // Check if the move is forward
-        if (fromCell.getColor() == "brown" && fromCell.row > toCell.row) {
+        if (fromCell.getPiece().getColor() == "brown" && fromCell.row > toCell.row) {
             return false;
-        } else if (fromCell.getColor() == "white" && fromCell.row < toCell.row) {
+        } else if (fromCell.getPiece().getColor() == "white" && fromCell.row < toCell.row) {
             return false;
         }
 
@@ -215,10 +239,20 @@ class Checkers {
 
         // Check if the move is two cells
         if (Math.abs(fromCell.row - toCell.row) == 2 && Math.abs(fromCell.col - toCell.col) == 2) {
-            // Check if there is a piece to jump
+            // Check if there is a piece to jump, if so, enable additional jumps afterwards to beat more pieces. Also, delete the jumped piece.
             let row = (fromCell.row + toCell.row) / 2;
             let col = (fromCell.col + toCell.col) / 2;
-            if (this.board.getCell(row, col).isOccupied()) {
+            if (this.board.getCell(row, col).isOccupied() && this.board.getCell(row, col).getPiece().getColor() != fromCell.getPiece().getColor()) {
+                this.board.getCell(row, col).removePiece();
+
+                // Check if there are more jumps available
+                if (this.isJumpAvailable(toCell)) {
+                    selectionMode = "from";
+                    this.fromCell = toCell;
+                    this.fromCell.highlight();
+                    this.setEventListeners();
+                }
+
                 return true;
             }
         }
@@ -242,12 +276,6 @@ class Checkers {
     inputMove(e, checkers) {
         let row = e.currentTarget.id.split("-")[1];
         let col = e.currentTarget.id.split("-")[2];
-
-        // Check if the cell is highlighted
-        if (checkers.board.getCell(row, col).isHighlighted) {
-            alert("Already selected");
-            return;
-        }
 
         // Behaviour depending on the selection mode
         if (selectionMode == "from") {
@@ -273,6 +301,13 @@ class Checkers {
             checkers.changeSelectionMode();
         }
         else if (selectionMode == "to") {
+            // Check if the cell is highlighted, revert to selection mode "from"
+            if (checkers.board.getCell(row, col).isHighlighted) {
+                checkers.board.getCell(row, col).unhighlight();
+                checkers.changeSelectionMode();
+                return;
+            }
+
             // Check if the cell is occupied
             if (checkers.board.getCell(row, col).isOccupied()) {
                 alert("Cannot move to an occupied cell");
@@ -305,34 +340,9 @@ class Checkers {
         }
     }
 
-    /* 
-    
-    class Example {
-        constructor(selector) {
-            this.elements = document.querySelectorAll(selector);
-            this.addEventListeners();
-        }
-
-        addEventListeners() {
-            this.elements.forEach((element) => {
-                element.addEventListener("click", (event) => {
-                    this.handleClick(event, this, "otherVariable");
-                });
-            });
-        }
-
-        handleClick(event, example, otherVariable) {
-            // Do something with the event, example, and otherVariable
-            console.log(event);
-            console.log(example);
-            console.log(otherVariable);
-        }
-    }
-    */
-
     setEventListeners() {
-        for (var row = 0; row < this.board.rows - 1; row++) {
-            for (var col = 0; col < this.board.cols - 1; col++) {
+        for (var row = 0; row < this.board.rows; row++) {
+            for (var col = 0; col < this.board.cols; col++) {
                 // Set click event listener for each cell by id, function parameters are the event itself and the checkers object. Function is inputMove
                 let checkers = this;
                 document.getElementById(this.board.getCell(row, col).getId()).addEventListener('click', (event) => {
@@ -368,3 +378,7 @@ window.onload = function() {
     game.displayBoard();
     game.setEventListeners();
 };
+
+/* todo:
+- King
+- Multiple jumps */

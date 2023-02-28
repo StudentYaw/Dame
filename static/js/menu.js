@@ -43,7 +43,7 @@ function joinSession() {
     var sessionId = document.getElementById('session_id').value;
     fetch('/joinSession', {
         method: 'POST',
-        body: sessionId + " " + document.getElementById('name').value,
+        body: "session_id:" + sessionId + " name:" + document.getElementById('name').value,
         headers: { 'Content-Type': 'text' }
     })
     .then(response => response.json())
@@ -56,14 +56,43 @@ function joinSession() {
     window.location.href = url + "session";
 }
 
+let uiData = {
+    "session_id": "",
+    "name": "",
+}
+
+function checkButtonStatus() {
+    // Check if sessionid and name are filled
+    if (uiData.session_id != "" && uiData.name != "") {
+        document.getElementById('start_session').disabled = false;
+        document.getElementById('join_session').disabled = false;
+
+        // Send a POST to the flask server so that the data gets saved
+        fetch('/saveData', {
+            method: 'POST',
+            body: JSON.stringify(uiData),
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Return the data
+            return data;
+        });
+    }
+}
+
 function submitSessionId() {
     var sessionId = document.getElementById('session_id').value;
     // Check if sessionid is correct and not taken
-
+    // missing
+    uiData.session_id = sessionId;
+    checkButtonStatus();
 }
 
 function submitName() {
     var username = document.getElementById('name').value;
     // Check if username is correct and not taken
-
+    // missing
+    uiData.name = username;
+    checkButtonStatus();
 }
