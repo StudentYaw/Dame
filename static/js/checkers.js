@@ -1,6 +1,7 @@
 class Piece {
     constructor(color) {
         this.color = color;
+        this.king = false;
         // set id and event listener
         /* this.id = "piece-" + row + "-" + col;
         this.element = document.getElementById(this.id);
@@ -15,6 +16,14 @@ class Piece {
 
     getHTML() {
         return "<div class='piece " + this.color + "'></div>";
+    }
+
+    setKing() {
+        this.king = true;
+    }
+
+    isKing() {
+        return this.king;
     }
 }
 
@@ -188,6 +197,8 @@ class Checkers {
         this.board.init();
     }
 
+    player1pieces = 12;
+    player2pieces = 12;
     fromCell = null;
     toCell = null;
 
@@ -219,45 +230,71 @@ class Checkers {
         return jumpAvailable;
     }
 
+    canJump(fromCell, toCell) {
+        // Bug: true, but there is no valid jump when the target cell (toCell) is occupied...
+        if (fromCell == undefined || toCell == undefined) {
+            return false;
+        }
+        if (Math.abs(fromCell.row - toCell.row) == 2 && Math.abs(fromCell.col - toCell.col) == 2) {
+            let row = (fromCell.row + toCell.row) / 2;
+            let col = (fromCell.col + toCell.col) / 2;
+            if (this.board.getCell(row, col).isOccupied() && this.board.getCell(row, col).getPiece().getColor() != fromCell.getPiece().getColor()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     isValidMove(fromCell, toCell) {
+        let status = [false, ""];
+        let playerColor = fromCell.getPiece().getColor();
+
+
         // Check if the move is diagonal
         if (Math.abs(fromCell.row - toCell.row) != Math.abs(fromCell.col - toCell.col)) {
             return false;
         }
 
-        // Check if the move is forward
-        if (fromCell.getPiece().getColor() == "brown" && fromCell.row > toCell.row) {
-            return false;
-        } else if (fromCell.getPiece().getColor() == "white" && fromCell.row < toCell.row) {
-            return false;
+        // Check if the move is forward, doesn't check if king piece
+        if (fromCell.getPiece().isKing() == false) {
+            if (playerColor == "brown" && fromCell.row > toCell.row) {
+                return false;
+            } else if (playerColor == "white" && fromCell.row < toCell.row) {
+                return false;
+            }
         }
 
         // Check if the move is one cell
         if (Math.abs(fromCell.row - toCell.row) == 1 && Math.abs(fromCell.col - toCell.col) == 1) {
-            return true;
+            status = [true, "moved"];
         }
 
         // Check if the move is two cells
-        if (Math.abs(fromCell.row - toCell.row) == 2 && Math.abs(fromCell.col - toCell.col) == 2) {
-            // Check if there is a piece to jump, if so, enable additional jumps afterwards to beat more pieces. Also, delete the jumped piece.
+        if (this.canJump(fromCell, toCell)) {
             let row = (fromCell.row + toCell.row) / 2;
             let col = (fromCell.col + toCell.col) / 2;
-            if (this.board.getCell(row, col).isOccupied() && this.board.getCell(row, col).getPiece().getColor() != fromCell.getPiece().getColor()) {
-                this.board.getCell(row, col).removePiece();
-
-                // Check if there are more jumps available
-                if (this.isJumpAvailable(toCell)) {
-                    selectionMode = "from";
-                    this.fromCell = toCell;
-                    this.fromCell.highlight();
-                    this.setEventListeners();
+            // Check which piece to be removed, possible win condition
+            this.board.getCell(row, col).removePiece();
+            if (playerColor == "brown") { // Attacker is brown, so the white player loses a piece
+                this.player1pieces -= 1;
+                if (this.player2pieces == 0) {
+                    alert("Player 1 won! Player 2 lost!");
+                    // Change to score page
+                    window.location.href = url + "/score";
                 }
-
-                return true;
             }
+            else if (playerColor == "white") { // Attacker is white, so the brown player loses a piece
+                this.player2pieces -= 1;
+                if (this.player1pieces == 0) {
+                    alert("Player 2 won! Player 1 lost!");
+                    // Change to score page
+                    window.location.href = url + "/score";
+                }
+            }
+            status = [true, "jumped"];
         }
 
-        return false;
+        return status;
     }
 
     movePiece(fromCell, toCell) {
@@ -315,7 +352,8 @@ class Checkers {
             }
 
             // Check if the move is valid
-            if (!checkers.isValidMove(checkers.fromCell, checkers.board.getCell(row, col))) {
+            let move = checkers.isValidMove(checkers.fromCell, checkers.board.getCell(row, col));
+            if (!move[0]) {
                 alert("Invalid move");
                 return;
             }
@@ -332,11 +370,42 @@ class Checkers {
             // Move the piece to the new cell
             checkers.movePiece(checkers.fromCell, checkers.toCell);
 
-            // Change turn
-            checkers.changeTurn();
+            // Test if there is another possible jump
+            // Bug: doesn't work for king piece?
+            let nextJumpPossible = false;
+            if (move[1] == "jumped") {
+                let nextCells;
+                let rowOffset = 2;
+                if (playerTurn == "white") {
+                    rowOffset = -2;   
+                }
+                nextCells = [checkers.board.getCell(parseInt(row)+rowOffset, parseInt(col)-2), checkers.board.getCell(parseInt(row)+rowOffset, parseInt(col)+2)];
+                nextCells.forEach(function (element) {
+                    if (checkers.canJump(checkers.board.getCell(row, col), element)) {
+                        nextJumpPossible = true;
+                    }
+                });
+            }
 
-            // Change selection mode
-            checkers.changeSelectionMode();
+            // Test if the piece reached the subjectively last row and turns
+            if (playerTurn == "white" && row == 0) {
+                checkers.board.getCell(row, col).getPiece().setKing();
+            }
+            else if (playerTurn == "brown" && row == 7) {
+                checkers.board.getCell(row, col).getPiece().setKing();
+            }
+            
+            if (!nextJumpPossible) {
+                // Change turn
+                checkers.changeTurn();
+
+                // Change selection mode
+                checkers.changeSelectionMode();
+            }
+            else {
+                checkers.toCell.highlight();
+                checkers.fromCell = checkers.toCell;
+            }
         }
     }
 
@@ -380,5 +449,5 @@ window.onload = function() {
 };
 
 /* todo:
-- King
+- Queen
 - Multiple jumps */

@@ -1,21 +1,3 @@
-function sendImage() {
-    var canvas = document.getElementById('canvas');
-    var imgData = canvas.toDataURL("image/jpeg");
-    //removing the prefix
-    imgData = imgData.replace('data:image/jpeg;base64,','');
-    // sending the base64 data to the server
-    fetch('/predict', {
-        method: 'POST',
-        body: imgData,
-        headers: { 'Content-Type': 'application/octet-stream' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById('prediction').innerHTML = "Prediction: " + data;
-        document.getElementById('input').value = document.getElementById('input').value + data;
-    });
-}
-
 function startLocally() {
     // get url
     var url = window.location.href;

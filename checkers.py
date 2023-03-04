@@ -3,9 +3,9 @@ from flask import Flask, render_template, request, redirect, url_for
 app = Flask(__name__)
 
 board = [
-    ["W", " ", "W", " ", "W", " ", "W", " "],
     [" ", "W", " ", "W", " ", "W", " ", "W"],
     ["W", " ", "W", " ", "W", " ", "W", " "],
+    [" ", "W", " ", "W", " ", "W", " ", "W"],
     [" ", " ", " ", " ", " ", " ", " ", " "],
     [" ", " ", " ", " ", " ", " ", " ", " "],
     ["B", " ", "B", " ", "B", " ", "B", " "],
@@ -56,7 +56,7 @@ def display_session():
     # Change the html to checkers.html with flask
     return render_template("session.html", session_id=session_id)
 
-@app.route("/score")
+@app.route("/checkers/score")
 def display_score():
     # Change the html to checkers.html with flask
     return render_template("score.html")
@@ -99,7 +99,7 @@ def load_data():
 
 # Start session with two players
 @app.route("/startSession", methods=["POST"])
-def start_session():
+def create_session():
     global sessions
     print("Starting session")
     data = request.get_data()
